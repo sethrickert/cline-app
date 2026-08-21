@@ -1,0 +1,14 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/bin/*.exe
+src-tauri/bin/*.pdb
+.vite/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+*.tsbuildinfo
+*.key
+*.key.pub

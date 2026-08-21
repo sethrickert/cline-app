@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 24" role="img" aria-label="AI thinking">
+  <g fill="#c8cbd0">
+    <circle cx="10" cy="12" r="5"><animate attributeName="cy" values="12;5;12;12" keyTimes="0;.35;.7;1" dur="1.35s" repeatCount="indefinite"/></circle>
+    <circle cx="32" cy="12" r="5"><animate attributeName="cy" values="12;12;5;12" keyTimes="0;.18;.53;1" dur="1.35s" repeatCount="indefinite"/></circle>
+    <circle cx="54" cy="12" r="5"><animate attributeName="cy" values="12;12;5;12" keyTimes="0;.36;.71;1" dur="1.35s" repeatCount="indefinite"/></circle>
+    <circle cx="76" cy="12" r="5"><animate attributeName="cy" values="12;12;5;12" keyTimes="0;.54;.89;1" dur="1.35s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>
