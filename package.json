@@ -1,0 +1,52 @@
+{
+  "name": "cline-chat",
+  "version": "1.2.0",
+  "private": true,
+  "description": "A beautiful, unofficial Windows desktop client for Cline models.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:sidecar": "bun run sidecar/index.ts",
+    "dev:desktop": "tauri dev",
+    "build": "tsc -b && vite build",
+    "build:sidecar": "bun build ./sidecar/index.ts --compile --target=bun-windows-x64 --outfile ./src-tauri/bin/cline-chat-sidecar-x86_64-pc-windows-msvc.exe",
+    "build:desktop": "pnpm build:sidecar && tauri build",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "audit": "pnpm audit --prod --audit-level=moderate",
+    "typecheck": "tsc -b --pretty false && tsc -p tsconfig.sidecar.json --pretty false",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@cline/sdk": "0.0.77",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-dialog": "2.7.2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
+    "lucide-react": "^0.468.0",
+    "mammoth": "^1.10.0",
+    "pdfjs-dist": "^5.4.149",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.3",
+    "@tauri-apps/cli": "^2.8.4",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.2",
+    "bun": "^1.3.3",
+    "jsdom": "^26.1.0",
+    "jszip": "^3.10.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.19.0"
+}

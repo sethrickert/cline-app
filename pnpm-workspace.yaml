@@ -1,0 +1,18 @@
+packages:
+  - "."
+
+allowBuilds:
+  bun: true
+  esbuild: true
+  protobufjs: true
+
+minimumReleaseAgeExclude:
+  - '@cline/agents@0.0.77'
+  - '@cline/core@0.0.77'
+  - '@cline/llms@0.0.77'
+  - '@cline/sdk@0.0.77'
+  - '@cline/shared@0.0.77'
+
+overrides:
+  "@ai-sdk/provider-utils@3>undici": 6.28.0
+  "@opentelemetry/core": 2.10.0
