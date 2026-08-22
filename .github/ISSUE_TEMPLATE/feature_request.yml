@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a focused improvement for Cline Chat.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user need would this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the experience and behavior you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Area
+      options:
+        - Chat or streaming
+        - Models or usage
+        - Attachments or context
+        - Conversation history
+        - Appearance or accessibility
+        - Account or authentication
+        - Updates or installation
+        - Developer experience
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: This proposal preserves the independent, Windows-only, dark-only project direction.
+          required: true

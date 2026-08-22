@@ -117,6 +117,16 @@ See [Architecture and integration notes](docs/ARCHITECTURE.md) for implementatio
 | `Shift+Enter` | Insert a new line |
 | `Esc` | Close the active menu or dialog |
 
+## Contributing
+
+Contributions are welcome. Start with the [contribution guide](CONTRIBUTING.md), then open a focused issue or pull request.
+
+- Every pull request is automatically assigned to the repository owner for review.
+- Changes must pass the Windows verification workflow before they can merge.
+- Outside contributors cannot push directly to `main`.
+- Review conversations must be resolved and approved changes are squash-merged.
+- Vulnerabilities should be submitted privately through the repository's **Security** tab.
+
 ## Development
 
 ### Requirements

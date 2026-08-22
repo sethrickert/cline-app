@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/sethrickert/cline-app/security/advisories/new
+    about: Privately report vulnerabilities or sensitive security concerns.
+  - name: Official Cline support
+    url: https://cline.bot/
+    about: Use the official Cline channels for issues with Cline accounts or services that are not specific to this unofficial app.
