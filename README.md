@@ -1,119 +1,178 @@
 # Cline Chat for Windows
 
-A polished, dark-only Windows desktop chat client for Cline models.
+A polished, dark-only Windows desktop client for chatting with the models available through your Cline account.
+
+> [!IMPORTANT]
+> **Cline Chat is an independent, unofficial open-source project.** It is not created, maintained, sponsored, authorized, or endorsed by [Cline](https://cline.bot/) or Cline Bot Inc. The Cline name is used only to describe compatibility with Cline accounts, services, and the open-source Cline SDK.
+
+![Cline Chat main interface with an Azure accent](docs/screenshots/cline-chat-main.png)
+
+*A full conversation workspace with model selection, live usage, pinned history, Markdown responses, code blocks, context controls, and Plan/Act modes.*
+
+## Download
+
+Cline Chat is available for **Windows 10 or 11 on x64 PCs**.
+
+1. Open the [latest GitHub release](https://github.com/sethrickert/cline-app/releases/latest).
+2. Download the `.exe` installer for the simplest setup, or the `.msi` package for managed Windows environments.
+3. Install Cline Chat and sign in through the browser when prompted.
+
+The installer includes the local Cline service; users do not need to install Node.js, Bun, Rust, the Cline CLI, or a separate Windows service. Microsoft Edge WebView2 is installed automatically when it is missing.
 
 > [!NOTE]
-> This is an independent, unofficial client and is not affiliated with or endorsed by Cline Bot Inc.
+> Release updates are cryptographically signed for the in-app updater. The Windows installers are not currently Authenticode-signed, so Windows may identify the publisher as unknown or show a SmartScreen prompt.
 
-![Cline Chat main interface](docs/screenshots/cline-chat-main.png)
+## Features
 
-## Highlights
+### Chat and models
 
-- Sign in with a Cline account through the system browser
-- Show the Cline device code in-app while browser authorization completes
-- Browse, search, pin, rename, share, delete, reopen, and continue conversation history
-- Stream clean, structured responses with an animated Thinking state and completion timing
-- Load the signed-in account's available Cline models, including favorites, tier, and vision details
-- Attach or paste images, add source files, and extract context from PDF and Word documents
-- See context, token, and cost usage for the current conversation
-- Render messages in copyable cards with Markdown, tables, lists, links, and code blocks
-- Choose Plan or Act mode
-- Use a focused dark interface with native Windows window controls
-- Pick an accent preset or any custom accent color; the choice is saved locally
-- Upload a local profile picture and configure chat behavior
-- Check for, download, verify, and install updates from GitHub Releases
+- Sign in to a Cline account using the system browser, with the device code displayed inside the app
+- Load the models available to the signed-in account instead of showing a hard-coded catalog
+- Search a scrollable model menu and mark favorite models for quick access
+- Show model provider, access tier, context size, and vision support when supplied by Cline
+- Stream structured Markdown responses without exposing raw SDK event data
+- Display an animated **Thinking** state, response progress, completion time, and recoverable errors
+- Switch between Plan and Act modes for each conversation
+- Stop an active response and copy individual messages or code blocks
 
-![GitHub update settings](docs/screenshots/cline-chat-settings.png)
+### Context and attachments
 
-![GitHub update settings](docs/screenshots/cline-chat-appearance-settings.png)
+- Add files or folders from the context menu
+- Drag files into the composer without duplicate attachments
+- Paste images directly from the Windows clipboard
+- Send image data to vision-capable models
+- Extract readable content from PDF and Word documents
+- Attach Markdown, text, CSV, JSON, source code, and other plain-text formats
+- See the current context-window size and token usage while composing
 
-## Why the Cline SDK instead of bundling the CLI?
+### Conversations and personalization
 
-The Cline CLI is a capable automation surface and provides JSON output, authentication, model flags, history, resume, and Windows binaries. For a long-lived graphical client, however, the official [`@cline/sdk`](https://github.com/cline/cline/tree/main/sdk) is the stronger integration boundary. It exposes structured session events, model discovery, provider settings, OAuth helpers, persisted transcripts, and usage data without parsing terminal output.
+- Browse searchable conversation history grouped by date
+- Pin important conversations above the rest of the history
+- Rename, share, or delete a conversation from its context menu
+- Render user and Cline messages as separate, copyable cards
+- Upload a local profile picture with consistent rounded styling
+- Use an intentionally dark-only interface with native Windows window controls
+- Choose Coral, Violet, Azure, Mint, or Amber accents—or select any custom color
+- Configure Enter-to-send, timestamps, and automatic update checks
 
-Cline's own [desktop application example](https://github.com/cline/cline/tree/main/apps/examples/desktop-app) uses the same overall architecture: a Tauri shell, React interface, and Bun-based local service built on `ClineCore`. Cline Chat follows that supported pattern while keeping the product focused on chat.
+### Account, usage, and updates
 
-## Architecture
+- View available Cline account, plan, organization, and credit information when returned by the service
+- Inspect input tokens, output tokens, estimated cost, and context usage for the current conversation
+- Check GitHub Releases for updates from Settings
+- Automatically check for updates when the app starts
+- Download, verify, and install signed updates without leaving the app
+
+## Appearance
+
+![Appearance settings with a custom purple accent](docs/screenshots/cline-chat-appearance-settings.png)
+
+*Appearance settings offer five presets, a custom six-digit color picker, and a live preview. The selected accent is saved locally and applied to selections, progress indicators, focus states, and primary actions.*
+
+## Updates
+
+![Update settings with a Mint accent](docs/screenshots/cline-chat-settings.png)
+
+*The Updates page shows the installed version and checks this repository's public GitHub Releases. Downloads are verified with the updater signing key embedded in Cline Chat before installation begins.*
+
+## How it works
+
+Cline Chat uses the official [`@cline/sdk`](https://github.com/cline/cline/tree/main/sdk) rather than installing or parsing the Cline CLI. The SDK provides structured authentication, model discovery, sessions, streaming events, history, and usage information that map cleanly to a graphical application.
 
 ```text
-React interface in Tauri WebView2
-              │
-       authenticated localhost WebSocket
-              │
-Bun sidecar using @cline/sdk / ClineCore
-              │
- Cline OAuth, models, sessions, and providers
+React interface inside Tauri WebView2
+                 │
+        authenticated localhost WebSocket
+                 │
+ bundled Bun sidecar using @cline/sdk / ClineCore
+                 │
+       Cline account, models, and providers
 ```
 
-- **Desktop shell:** Tauri 2, configured only for Windows installers.
+- **Desktop shell:** Tauri 2, packaged only for Windows x64.
 - **Interface:** React 19, TypeScript, and a custom dark design system.
-- **Cline service:** A compiled Bun sidecar using `@cline/sdk` in local mode.
-- **Local security:** The sidecar binds only to `127.0.0.1`; each launch gets a random transport token shared directly with the WebView.
-- **Credentials and history:** Managed by Cline's SDK/provider storage rather than duplicated in browser storage. Appearance, chat preferences, and an optional profile image are stored only in the local WebView profile.
-- **Safety:** This chat-focused release disables autonomous tool execution. Attached files are supplied as model context.
-- **Background process:** Tauri launches the bundled Cline service without a visible console window and terminates it with the app; it does not install a machine-wide Windows service or require administrator access.
+- **Local service:** A compiled Bun sidecar using `@cline/sdk` and `ClineCore`.
+- **Process security:** The sidecar listens only on `127.0.0.1` and requires a random token generated for each app launch.
+- **Process lifetime:** The sidecar runs without a visible console and stops when Cline Chat closes. It is not installed as a machine-wide service and does not require administrator access.
+- **Safety boundary:** This chat-focused client does not enable autonomous SDK tool execution. User-selected attachments are supplied as model context.
 
-More detail is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+See [Architecture and integration notes](docs/ARCHITECTURE.md) for implementation details.
+
+## Local data and Cline services
+
+- Cline credentials, provider settings, and sessions use storage managed by the Cline SDK.
+- Appearance preferences, chat preferences, favorite models, pinned conversations, and an optional profile picture are stored in the local WebView profile.
+- Profile-picture changes in Cline Chat do not modify the user's Cline account.
+- Attachments are read from the user's chosen local paths and are not copied into this repository.
+- When a user signs in to or uses Cline's hosted services, that service remains governed by [Cline's Terms of Service](https://cline.bot/tos) and [Privacy Notice](https://cline.bot/privacy).
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+K` | Focus conversation search |
+| `Ctrl+,` | Open Settings |
+| `Enter` | Send a message when Enter-to-send is enabled |
+| `Shift+Enter` | Insert a new line |
+| `Esc` | Close the active menu or dialog |
 
 ## Development
 
 ### Requirements
 
 - Windows 10 or 11, x64
-- Node.js 22+
-- pnpm 11+
+- Node.js 22 or newer
+- pnpm 11
 - Rust stable with the MSVC toolchain
 - Microsoft Edge WebView2 Runtime
 
-### Run the interface
+### Run the browser preview
 
 ```powershell
 pnpm install
 pnpm dev
 ```
 
-The browser preview includes representative conversations so the complete interface can be reviewed without signing in.
+The browser preview uses representative local conversations so the interface can be reviewed without connecting a Cline account.
 
-### Run the Windows application
+### Run the Windows desktop app
 
 ```powershell
 pnpm dev:desktop
 ```
 
-### Test and package
+### Verify and package
 
 ```powershell
 pnpm check
+pnpm run audit
 pnpm build:sidecar
 pnpm exec tauri build
 ```
 
-The final command creates NSIS and MSI installer files under `src-tauri/target/release/bundle`. Authenticode signing is intentionally left to the release owner.
+The final command creates NSIS and MSI installers under `src-tauri/target/release/bundle`.
 
-## Signed updates and releases
+## Releases and automatic updates
 
-The app checks `https://github.com/sethrickert/cline-app/releases/latest/download/latest.json`. Update archives are verified with the public key embedded in the application before Tauri starts the passive Windows installer.
+The Windows verification workflow checks every push and pull request. It type-checks, tests, audits, builds the interface and sidecar, and packages both Windows installers.
 
-The included GitHub Actions workflow builds a release whenever a `v*` tag is pushed. Before publishing the first release:
+Pushing a matching `v*` tag runs the release workflow, which publishes installers, updater signatures, and `latest.json` to GitHub Releases. The app checks the stable endpoint below:
 
-1. Add the updater private key as the repository secret `TAURI_SIGNING_PRIVATE_KEY`.
-2. Add `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` only if that private key has a password.
-3. Keep the private key outside the repository and back it up securely. Losing it prevents existing installations from accepting future updates.
-4. Bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`, then push a matching tag such as `v1.2.0`.
+```text
+https://github.com/sethrickert/cline-app/releases/latest/download/latest.json
+```
 
-The workflow publishes the installers, signed updater artifacts, and `latest.json` to the public GitHub Release. The first installation is still manual; automatic updates work after a release newer than the installed version exists.
-
-## Keyboard shortcuts
-
-- `Ctrl+K` — search conversations
-- `Ctrl+,` — open Settings
-- `Enter` — send a message
-- `Shift+Enter` — insert a new line
+Maintainers must keep the updater private key secure and bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` before publishing a new tag. Losing the updater key prevents existing installations from accepting future updates.
 
 ## Project status
 
-Before a production release, configure Windows Authenticode signing, add the updater signing secret, publish a privacy policy, and run release QA for the Cline OAuth flow with a real account.
+Version **1.2.0** is the first public Windows release. Automated tests, Windows packaging, signed in-app updates, and public release artifacts are active. The main remaining distribution improvement is Windows Authenticode signing to provide verified publisher identity and reduce SmartScreen friction.
 
-## License
+## License, attribution, and trademarks
 
-MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Cline Chat is free software distributed under the [MIT License](LICENSE). It was created by [Seth Rickert](https://github.com/sethrickert) with development assistance from OpenAI Codex. Source code, release history, and issue tracking are available in this repository.
+
+The [Cline project and SDK](https://github.com/cline/cline) are separate open-source works distributed under the Apache License 2.0 and maintained by Cline Bot Inc. See [Third-party notices](THIRD_PARTY_NOTICES.md) for attribution.
+
+**Cline Chat is not an official Cline product and has no corporate relationship with Cline Bot Inc.** “Cline,” its logos, and related marks belong to their respective owners. Their appearance or mention here does not imply affiliation or endorsement. Visit the [official Cline website](https://cline.bot/), [Cline GitHub organization](https://github.com/cline), and [Cline brand guidelines](https://cline.bot/brand) for the official project and brand materials.

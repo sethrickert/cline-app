@@ -15,19 +15,26 @@ page.on("pageerror", (error) => consoleErrors.push(error.message));
 await page.goto("http://127.0.0.1:1420/", { waitUntil: "networkidle" });
 await page.getByText("Refactor authentication flow", { exact: true }).first().waitFor();
 await page.getByRole("button", { name: "Claude Sonnet 4.6" }).click();
-await page.getByText("Available through your providers").waitFor();
+await page.getByText("Models for your account").waitFor();
 await page.locator(".app-name").click();
 await page.locator(".chat-scroll").evaluate((element) => { element.scrollTop = 0; });
-await page.screenshot({ path: resolve(outputDir, "cline-chat-main.png") });
 
 await page.getByRole("button", { name: "Settings", exact: true }).click();
 await page.getByRole("heading", { name: "Appearance" }).waitFor();
 await page.getByRole("button", { name: "azure accent" }).click();
-const accentAfterPreset = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
-if (accentAfterPreset !== "#50a7ff") throw new Error(`Accent preset did not apply: ${accentAfterPreset}`);
+await page.getByRole("button", { name: "Close settings" }).click();
+await page.screenshot({ path: resolve(outputDir, "cline-chat-main.png") });
+
+await page.getByRole("button", { name: "Settings", exact: true }).click();
+await page.getByRole("heading", { name: "Appearance" }).waitFor();
 await page.locator('input[type="color"]').fill("#b66cff");
 const accentAfterCustom = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
 if (accentAfterCustom !== "#b66cff") throw new Error(`Custom accent did not apply: ${accentAfterCustom}`);
+await page.screenshot({ path: resolve(outputDir, "cline-chat-appearance-settings.png") });
+
+await page.getByRole("button", { name: "mint accent" }).click();
+await page.getByRole("button", { name: "Updates", exact: true }).click();
+await page.getByRole("heading", { name: "Updates", exact: true }).waitFor();
 await page.screenshot({ path: resolve(outputDir, "cline-chat-settings.png") });
 await page.getByRole("button", { name: "Close settings" }).click();
 
@@ -37,6 +44,11 @@ await page.getByRole("button", { name: "Send message" }).click();
 await page.getByText("First pass").waitFor({ timeout: 10_000 });
 await page.getByText("Streaming", { exact: true }).waitFor({ state: "hidden", timeout: 15_000 });
 
+await page.getByRole("button", { name: "Settings", exact: true }).click();
+await page.getByRole("button", { name: "Appearance", exact: true }).click();
+await page.getByRole("button", { name: "Custom accent", exact: true }).click();
+await page.locator('input[type="color"]').fill("#b66cff");
+await page.getByRole("button", { name: "Close settings" }).click();
 await page.reload({ waitUntil: "networkidle" });
 const persistedAccent = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
 if (persistedAccent !== "#b66cff") throw new Error(`Custom accent did not persist: ${persistedAccent}`);
@@ -44,7 +56,7 @@ if (persistedAccent !== "#b66cff") throw new Error(`Custom accent did not persis
 await browser.close();
 console.log(JSON.stringify({
   viewport: "1440x900",
-  screenshots: ["docs/screenshots/cline-chat-main.png", "docs/screenshots/cline-chat-settings.png"],
+  screenshots: ["docs/screenshots/cline-chat-main.png", "docs/screenshots/cline-chat-appearance-settings.png", "docs/screenshots/cline-chat-settings.png"],
   checks: ["history", "model menu", "settings", "preset accent", "custom accent", "accent persistence", "new chat", "message streaming"],
   consoleErrors,
 }, null, 2));
