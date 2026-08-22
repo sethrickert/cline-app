@@ -25,6 +25,8 @@ A polished, dark-only Windows desktop chat client for Cline models.
 
 ![GitHub update settings](docs/screenshots/cline-chat-settings.png)
 
+![GitHub update settings](docs/screenshots/cline-chat-appearance-settings.png)
+
 ## Why the Cline SDK instead of bundling the CLI?
 
 The Cline CLI is a capable automation surface and provides JSON output, authentication, model flags, history, resume, and Windows binaries. For a long-lived graphical client, however, the official [`@cline/sdk`](https://github.com/cline/cline/tree/main/sdk) is the stronger integration boundary. It exposes structured session events, model discovery, provider settings, OAuth helpers, persisted transcripts, and usage data without parsing terminal output.
