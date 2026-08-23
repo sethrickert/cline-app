@@ -141,7 +141,7 @@ function toAccount(user: Json, balance?: Json, plan?: Json) {
     signedIn: true,
     name: displayName,
     email: String(user.email ?? ""),
-    avatar: displayName.slice(0, 1).toUpperCase(),
+    avatar: displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
     photoUrl: typeof user.photoUrl === "string" ? user.photoUrl : undefined,
     plan: planLabel,
     credits: Number.isFinite(rawBalance) ? rawBalance / 1_000_000_000 : undefined,
@@ -205,13 +205,18 @@ async function handle(command: string, args: Json = {}): Promise<unknown> {
         const metadata = model as unknown as Json;
         const featured = metadata.featured as Json | undefined;
         const inputModalities = metadata.inputModalities as unknown[] | undefined;
+        const rawLabel = model.name || model.id.split("/").at(-1) || model.id;
+        const pricingValues = metadata.pricing && typeof metadata.pricing === "object" ? Object.values(metadata.pricing as Json).filter((value): value is number => typeof value === "number") : [];
+        const free = featured?.tier === "free" || /\(free\)/i.test(rawLabel) || pricingValues.length > 0 && pricingValues.every((value) => value === 0);
+        const recommended = featured?.tier === "recommended" || featured?.recommended === true || metadata.recommended === true;
         return ({
         id: model.id,
-        label: model.name || model.id.split("/").at(-1) || model.id,
+        label: rawLabel.replace(/\s*\(free\)\s*/gi, "").trim(),
         provider: "Cline",
         contextWindow: model.contextWindow ?? 200_000,
-        recommended: featured?.tier === "recommended",
-        tier: featured?.tier,
+        recommended,
+        free,
+        tier: free ? "free" : recommended ? "recommended" : featured?.tier,
         supportsVision: model.supportsVision ?? inputModalities?.includes("image") ?? false,
       }); }),
     };

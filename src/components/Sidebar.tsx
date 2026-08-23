@@ -17,18 +17,21 @@ const ConversationRow = memo(function ConversationRow({
   active,
   onSelect,
   onContextMenu,
+  pinned,
+  onPin,
 }: {
   conversation: Conversation;
   active: boolean;
   onSelect: (id: string) => void;
   onContextMenu: (event: React.MouseEvent, id: string) => void;
+  pinned: boolean;
+  onPin: (id: string) => void;
 }) {
   return (
-    <button className={`conversation-row ${active ? "active" : ""}`} onContextMenu={(event) => onContextMenu(event, conversation.id)} onClick={() => onSelect(conversation.id)}>
-      <MessageCircle size={17} />
-      <span>{conversation.title}</span>
-      <time>{relativeLabel(conversation.updatedAt)}</time>
-    </button>
+    <div className={`conversation-row ${active ? "active" : ""}`} onContextMenu={(event) => onContextMenu(event, conversation.id)}>
+      <button className="conversation-main" onClick={() => onSelect(conversation.id)}><MessageCircle size={17} /><span>{conversation.title}</span><time>{relativeLabel(conversation.updatedAt)}</time></button>
+      <button className={`conversation-pin ${pinned ? "active" : ""}`} aria-label={`${pinned ? "Unpin" : "Pin"} ${conversation.title}`} title={pinned ? "Unpin conversation" : "Pin conversation"} onClick={() => onPin(conversation.id)}><Pin size={13} fill={pinned ? "currentColor" : "none"} /></button>
+    </div>
   );
 });
 
@@ -94,7 +97,7 @@ export function Sidebar({
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key.toLowerCase() === "k") {
+      if (event.ctrlKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
         searchRef.current?.focus();
         searchRef.current?.select();
@@ -112,31 +115,31 @@ export function Sidebar({
         <label className="search-box">
           <Search size={17} />
           <input ref={searchRef} aria-label="Search conversations" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search conversations" />
-          {search ? <button type="button" aria-label="Clear search" onClick={() => { onSearch(""); searchRef.current?.focus(); }}><X size={14} /></button> : <kbd title="Focus conversation search">Ctrl+K</kbd>}
+          {search ? <button type="button" aria-label="Clear search" onClick={() => { onSearch(""); searchRef.current?.focus(); }}><X size={14} /></button> : <kbd title="Focus conversation search">Ctrl+S</kbd>}
         </label>
       </div>
       <nav className="conversation-list" aria-label="Conversation history">
-        {groups.pinned.length > 0 ? <section><div className="history-static-label"><Pin size={12} />Pinned</div>{groups.pinned.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} onSelect={onSelect} onContextMenu={openContextMenu} />)}</section> : null}
+        {groups.pinned.length > 0 ? <section><div className="history-static-label"><Pin size={12} />Pinned</div>{groups.pinned.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} pinned onPin={onPin} onSelect={onSelect} onContextMenu={openContextMenu} />)}</section> : null}
         {groups.today.length > 0 ? (
           <section>
             <button className="history-group-button" aria-expanded={todayOpen} onClick={() => setTodayOpen((value) => !value)}>Today <ChevronDown size={14} className={todayOpen ? "" : "collapsed"} /></button>
-            {todayOpen ? groups.today.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} onSelect={onSelect} onContextMenu={openContextMenu} />) : null}
+            {todayOpen ? groups.today.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} pinned={false} onPin={onPin} onSelect={onSelect} onContextMenu={openContextMenu} />) : null}
           </section>
         ) : null}
         {groups.previous.length > 0 ? (
           <section>
             <button className="history-group-button" aria-expanded={previousOpen} onClick={() => setPreviousOpen((value) => !value)}>Previous 7 days <ChevronDown size={14} className={previousOpen ? "" : "collapsed"} /></button>
-            {previousOpen ? groups.previous.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} onSelect={onSelect} onContextMenu={openContextMenu} />) : null}
+            {previousOpen ? groups.previous.map((conversation) => <ConversationRow key={conversation.id} conversation={conversation} active={activeId === conversation.id} pinned={false} onPin={onPin} onSelect={onSelect} onContextMenu={openContextMenu} />) : null}
           </section>
         ) : null}
         {groups.pinned.length + groups.today.length + groups.previous.length === 0 ? <p className="empty-search">No conversations found</p> : null}
       </nav>
       <div className="sidebar-footer">
         <button className="account-row" onClick={onAccount}>
-          <ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar} online={account.signedIn} />
+          <ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar} crop={account.photoCrop} />
           <span className="account-copy"><strong>{account.signedIn ? account.name : "Sign in"}</strong><small>{account.signedIn ? account.email : "Connect your Cline account"}</small></span>
-          <MoreHorizontal size={17} />
         </button>
+        <button className="icon-button" aria-label="Account options" title="Account" onClick={onAccount}><MoreHorizontal size={17} /></button>
         <button className="icon-button" aria-label="Settings" onClick={onSettings}><Settings size={18} /></button>
       </div>
       {contextMenu ? <div className="conversation-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onPointerDown={(event) => event.stopPropagation()}>

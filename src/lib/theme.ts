@@ -1,6 +1,7 @@
 import type { AccentId } from "../types";
 
 export const ACCENTS: Record<Exclude<AccentId, "custom">, string> = {
+  pacific: "#1CA9C9",
   coral: "#ff705f",
   violet: "#9b7bff",
   azure: "#50a7ff",
@@ -16,8 +17,8 @@ export type ThemePreference = {
 };
 
 export const DEFAULT_THEME: ThemePreference = {
-  accentId: "coral",
-  customAccent: "#ff705f",
+  accentId: "pacific",
+  customAccent: "#1CA9C9",
 };
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -35,7 +36,14 @@ export function loadTheme(storage: Pick<Storage, "getItem"> = localStorage): The
 }
 
 export function resolveAccent(theme: ThemePreference): string {
-  return theme.accentId === "custom" ? theme.customAccent : ACCENTS[theme.accentId];
+  if (theme.accentId === "custom") return HEX_COLOR.test(theme.customAccent) ? theme.customAccent : DEFAULT_THEME.customAccent;
+  return ACCENTS[theme.accentId] ?? ACCENTS.pacific;
+}
+
+export function normalizeHexColor(value: string): string | undefined {
+  const trimmed = value.trim();
+  const prefixed = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  return HEX_COLOR.test(prefixed) ? prefixed.toUpperCase() : undefined;
 }
 
 export function applyTheme(theme: ThemePreference, root: HTMLElement = document.documentElement) {
@@ -47,6 +55,6 @@ export function applyTheme(theme: ThemePreference, root: HTMLElement = document.
 }
 
 export function saveTheme(theme: ThemePreference, storage: Pick<Storage, "setItem"> = localStorage) {
-  storage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+  try { storage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme)); } catch { /* Appearance changes must never interrupt chat. */ }
 }
 

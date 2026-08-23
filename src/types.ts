@@ -1,4 +1,4 @@
-export type AccentId = "coral" | "violet" | "azure" | "mint" | "amber" | "custom";
+export type AccentId = "pacific" | "coral" | "violet" | "azure" | "mint" | "amber" | "custom";
 export type AgentMode = "plan" | "act";
 export type SettingsSection = "appearance" | "general" | "account" | "updates" | "about";
 
@@ -51,6 +51,7 @@ export type Account = {
   plan?: string;
   credits?: number;
   photoUrl?: string;
+  photoCrop?: AvatarCrop;
   createdAt?: string;
   organizations?: number;
 };
@@ -61,8 +62,15 @@ export type ModelOption = {
   provider: string;
   contextWindow: number;
   recommended?: boolean;
+  free?: boolean;
   tier?: "recommended" | "free" | "subscribed";
   supportsVision?: boolean;
+};
+
+export type AvatarCrop = {
+  x: number;
+  y: number;
+  zoom: number;
 };
 
 export type AppPreferences = {
@@ -70,6 +78,7 @@ export type AppPreferences = {
   showTimestamps: boolean;
   autoCheckUpdates: boolean;
   profilePhoto?: string;
+  profilePhotoCrop?: AvatarCrop;
   favoriteModelIds: string[];
   pinnedConversationIds: string[];
 };

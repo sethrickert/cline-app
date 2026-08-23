@@ -1,6 +1,7 @@
-import { Check, ExternalLink, Github, Info, Palette, RefreshCw, Settings2, Sparkles, UserRound, X } from "lucide-react";
+import { Check, Copy, ExternalLink, Github, Info, Link, Palette, RefreshCw, Settings2, Sparkles, UserRound, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { AccentId, Account, AppPreferences, SettingsSection, UpdateState } from "../types";
-import { ACCENTS, type ThemePreference } from "../lib/theme";
+import { ACCENTS, normalizeHexColor, type ThemePreference } from "../lib/theme";
 import { ProfileAvatar } from "./ProfileAvatar";
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
@@ -9,7 +10,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (che
 
 export function SettingsDialog({
   open, section, theme, account, preferences, updateState, onSectionChange, onThemeChange, onPreferencesChange,
-  onAccount, onChangePhoto, onRemovePhoto, onCheckUpdates, onInstallUpdate, onOpenExternal, onClose,
+  authBusy, authError, deviceCode, onSignIn, onSignOut, onChangePhoto, onEditPhoto, onSetPhotoUrl, onRemovePhoto, onCheckUpdates, onInstallUpdate, onOpenExternal, onClose,
 }: {
   open: boolean;
   section: SettingsSection;
@@ -20,15 +21,29 @@ export function SettingsDialog({
   onSectionChange: (section: SettingsSection) => void;
   onThemeChange: (theme: ThemePreference) => void;
   onPreferencesChange: (preferences: AppPreferences) => void;
-  onAccount: () => void;
+  authBusy: boolean;
+  authError?: string;
+  deviceCode?: string;
+  onSignIn: () => void;
+  onSignOut: () => void;
   onChangePhoto: () => void;
+  onEditPhoto: () => void;
+  onSetPhotoUrl: (url: string) => void;
   onRemovePhoto: () => void;
   onCheckUpdates: () => void;
   onInstallUpdate: () => void;
   onOpenExternal: (url: string) => void;
   onClose: () => void;
 }) {
+  const [customDraft, setCustomDraft] = useState(theme.customAccent.toUpperCase());
+  const [photoUrlDraft, setPhotoUrlDraft] = useState("");
+  useEffect(() => setCustomDraft(theme.customAccent.toUpperCase()), [theme.customAccent]);
   if (!open) return null;
+  const commitCustom = () => {
+    const customAccent = normalizeHexColor(customDraft);
+    if (customAccent) onThemeChange({ accentId: "custom", customAccent });
+    else setCustomDraft(theme.customAccent.toUpperCase());
+  };
   const selectPreset = (accentId: AccentId) => onThemeChange({ ...theme, accentId });
   const nav: { id: SettingsSection; label: string; icon: typeof Palette }[] = [
     { id: "appearance", label: "Appearance", icon: Palette },
@@ -62,7 +77,7 @@ export function SettingsDialog({
                 {(Object.entries(ACCENTS) as [Exclude<AccentId, "custom">, string][]).map(([id, color]) => <button key={id} className={theme.accentId === id ? "selected" : ""} onClick={() => selectPreset(id)} aria-label={`${id} accent`}><i style={{ background: color }}>{theme.accentId === id ? <Check size={17} /> : null}</i><span>{id}</span></button>)}
                 <button className={theme.accentId === "custom" ? "selected custom-accent" : "custom-accent"} onClick={() => selectPreset("custom")} aria-label="Custom accent"><i style={{ background: theme.customAccent }}>{theme.accentId === "custom" ? <Check size={17} /> : null}</i><span>custom</span></button>
               </div>
-              <label className="custom-color-row"><span><strong>Custom color</strong><small>Choose any six-digit color.</small></span><span className="color-input"><input type="color" value={theme.customAccent} onChange={(event) => onThemeChange({ accentId: "custom", customAccent: event.target.value })} /><code>{theme.customAccent.toUpperCase()}</code></span></label>
+              <label className="custom-color-row"><span><strong>Custom color</strong><small>Choose any six-digit color.</small></span><span className="color-input"><input aria-label="Custom color picker" type="color" value={theme.customAccent} onChange={(event) => { setCustomDraft(event.target.value.toUpperCase()); onThemeChange({ accentId: "custom", customAccent: event.target.value }); }} /><input className="hex-input" aria-label="Custom color hex value" value={customDraft} maxLength={7} onChange={(event) => setCustomDraft(event.target.value)} onBlur={commitCustom} onKeyDown={(event) => { if (event.key === "Enter") commitCustom(); }} /></span></label>
               <div className="accent-preview"><div className="preview-sidebar"><i /><i /><i /></div><div className="preview-main"><span>Accent preview</span><i><b /></i><button>Primary action</button></div></div>
             </div>
           </> : null}
@@ -70,11 +85,14 @@ export function SettingsDialog({
             <div className="setting-row"><span><strong>Send with Enter</strong><small>Use Shift+Enter for a new line when enabled.</small></span><Toggle label="Send with Enter" checked={preferences.sendWithEnter} onChange={(sendWithEnter) => onPreferencesChange({ ...preferences, sendWithEnter })} /></div>
             <div className="setting-row"><span><strong>Show timestamps</strong><small>Display a time beside each message.</small></span><Toggle label="Show timestamps" checked={preferences.showTimestamps} onChange={(showTimestamps) => onPreferencesChange({ ...preferences, showTimestamps })} /></div>
             <div className="setting-row"><span><strong>Check for updates automatically</strong><small>Checks GitHub Releases when the app starts.</small></span><Toggle label="Automatic update checks" checked={preferences.autoCheckUpdates} onChange={(autoCheckUpdates) => onPreferencesChange({ ...preferences, autoCheckUpdates })} /></div>
-            <div className="shortcut-card"><strong>Keyboard shortcuts</strong><span><kbd>Ctrl</kbd><kbd>K</kbd> Focus conversation search</span><span><kbd>Ctrl</kbd><kbd>,</kbd> Open settings</span><span><kbd>Esc</kbd> Close menus</span></div>
+            <div className="shortcut-card"><strong>Keyboard shortcuts</strong><span><kbd>Ctrl</kbd><kbd>S</kbd> Focus conversation search</span><span><kbd>Ctrl</kbd><kbd>,</kbd> Open settings</span><span><kbd>Esc</kbd> Close menus</span></div>
           </div> : null}
           {section === "account" ? <div className="settings-stack">
-            <div className="settings-account-card"><ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar || "?"} size="large" /><span><strong>{account.signedIn ? account.name : "Not connected"}</strong><small>{account.signedIn ? account.email : "Sign in to load your Cline models and account usage."}</small></span><button className="secondary-inline" onClick={onAccount}>{account.signedIn ? "Manage" : "Sign in"}</button></div>
-            <div className="setting-row"><span><strong>Profile picture</strong><small>Stored locally on this Windows device; it does not change your Cline account.</small></span><span className="inline-actions"><button onClick={onChangePhoto}>Choose image</button>{preferences.profilePhoto ? <button onClick={onRemovePhoto}>Remove</button> : null}</span></div>
+            <div className="settings-account-card"><ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar || "?"} crop={account.photoCrop} size="large" /><span><strong>{account.signedIn ? account.name : "Not connected"}</strong><small>{account.signedIn ? account.email : "Sign in to load your Cline models and account usage."}</small></span>{account.signedIn ? <button className="danger-inline" onClick={onSignOut}>Sign out</button> : <button className="primary-inline" disabled={authBusy} onClick={onSignIn}>{authBusy ? "Waiting…" : "Sign in"}</button>}</div>
+            {deviceCode ? <div className="device-code-panel"><span>Confirm this code is shown in your browser</span><div><strong>{deviceCode}</strong><button aria-label="Copy activation code" onClick={() => void navigator.clipboard.writeText(deviceCode)}><Copy size={15} /></button></div><small>Complete sign-in in the browser. This page updates automatically.</small></div> : null}
+            {authError ? <p className="dialog-error">{authError}</p> : null}
+            <div className="setting-row"><span><strong>Profile picture</strong><small>Stored locally on this Windows device; it does not change your Cline account.</small></span><span className="inline-actions"><button onClick={onChangePhoto}>Choose image</button>{account.photoUrl ? <button onClick={onEditPhoto}>Crop</button> : null}{preferences.profilePhoto ? <button onClick={onRemovePhoto}>Remove</button> : null}</span></div>
+            <div className="profile-url-row"><span><Link size={15} /><input aria-label="Profile image URL" type="url" placeholder="https://example.com/profile.png" value={photoUrlDraft} onChange={(event) => setPhotoUrlDraft(event.target.value)} /></span><button className="secondary-inline" disabled={!/^https:\/\//i.test(photoUrlDraft)} onClick={() => { onSetPhotoUrl(photoUrlDraft); setPhotoUrlDraft(""); }}>Preview and crop</button></div>
             {account.signedIn ? <div className="account-detail-grid"><span><small>Plan</small><strong>{account.plan || "Cline"}</strong></span><span><small>Credit balance</small><strong>{account.credits === undefined ? "Unavailable" : `$${account.credits.toFixed(2)}`}</strong></span><span><small>Organizations</small><strong>{account.organizations ?? 0}</strong></span></div> : null}
           </div> : null}
           {section === "updates" ? <div className="settings-stack">

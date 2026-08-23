@@ -8,8 +8,15 @@ const imageMimes: Record<string, string> = {
 };
 
 async function extractPdf(path: string) {
+  // Bun's standalone Windows runtime does not expose the browser geometry
+  // constructors that PDF.js checks during module initialization. Text
+  // extraction does not render to a canvas, but real constructors are still
+  // required so those capability checks remain safe.
+  if (!("DOMMatrix" in globalThis)) Object.defineProperty(globalThis, "DOMMatrix", { value: class DOMMatrix {}, configurable: true });
+  if (!("ImageData" in globalThis)) Object.defineProperty(globalThis, "ImageData", { value: class ImageData {}, configurable: true });
+  if (!("Path2D" in globalThis)) Object.defineProperty(globalThis, "Path2D", { value: class Path2D {}, configurable: true });
   const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const document = await getDocument({ data: new Uint8Array(await readFile(path)), useWorkerFetch: false }).promise;
+  const document = await getDocument({ data: new Uint8Array(await readFile(path)), useWorkerFetch: false, useSystemFonts: true }).promise;
   const pages: string[] = [];
   for (let index = 1; index <= document.numPages; index += 1) {
     const page = await document.getPage(index);
@@ -40,7 +47,9 @@ export async function prepareAttachments(prompt: string, value: unknown) {
       continue;
     }
     if (extension === ".pdf" && path) {
-      extracted.push(`Context from ${attachment.name ?? path}:\n${(await extractPdf(path)).slice(0, 600_000)}`);
+      const content = await extractPdf(path);
+      if (!content.trim()) throw new Error(`No readable text was found in ${attachment.name ?? path}. Scanned PDFs need OCR before they can be used as context.`);
+      extracted.push(`Context from ${attachment.name ?? path}:\n${content.slice(0, 600_000)}`);
       continue;
     }
     if (path) userFiles.push(path);

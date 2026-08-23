@@ -18,6 +18,7 @@ export function loadPreferences(): AppPreferences {
       showTimestamps: stored.showTimestamps ?? DEFAULT_PREFERENCES.showTimestamps,
       autoCheckUpdates: stored.autoCheckUpdates ?? DEFAULT_PREFERENCES.autoCheckUpdates,
       profilePhoto: typeof stored.profilePhoto === "string" ? stored.profilePhoto : undefined,
+      profilePhotoCrop: stored.profilePhotoCrop && typeof stored.profilePhotoCrop.x === "number" && typeof stored.profilePhotoCrop.y === "number" && typeof stored.profilePhotoCrop.zoom === "number" ? stored.profilePhotoCrop : undefined,
       favoriteModelIds: Array.isArray(stored.favoriteModelIds) ? stored.favoriteModelIds.filter((id): id is string => typeof id === "string") : [],
       pinnedConversationIds: Array.isArray(stored.pinnedConversationIds) ? stored.pinnedConversationIds.filter((id): id is string => typeof id === "string") : [],
     };
@@ -27,5 +28,5 @@ export function loadPreferences(): AppPreferences {
 }
 
 export function savePreferences(preferences: AppPreferences) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences)); } catch { /* Keep the app usable if local profile data exceeds storage limits. */ }
 }

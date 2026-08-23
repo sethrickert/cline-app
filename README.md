@@ -5,7 +5,7 @@ A polished, dark-only Windows desktop client for chatting with the models availa
 > [!IMPORTANT]
 > **Cline Chat is an independent, unofficial open-source project.** It is not created, maintained, sponsored, authorized, or endorsed by [Cline](https://cline.bot/) or Cline Bot Inc. The Cline name is used only to describe compatibility with Cline accounts, services, and the open-source Cline SDK.
 
-![Cline Chat main interface with an Azure accent](docs/screenshots/cline-chat-main.png)
+![Cline Chat main interface with a custom accent](docs/screenshots/cline-chat-main.png)
 
 *A full conversation workspace with model selection, live usage, pinned history, Markdown responses, code blocks, context controls, and Plan/Act modes.*
 
@@ -28,12 +28,13 @@ The installer includes the local Cline service; users do not need to install Nod
 
 - Sign in to a Cline account using the system browser, with the device code displayed inside the app
 - Load the models available to the signed-in account instead of showing a hard-coded catalog
-- Search a scrollable model menu and mark favorite models for quick access
-- Show model provider, access tier, context size, and vision support when supplied by Cline
+- Browse a scrollable model menu with additive Favorites, Recommended, All Models, and Free Models sections
+- Mark favorites without removing them from the complete model catalog
+- Show consistent FREE and Recommended badges plus the account plan, context size, and vision support returned by Cline
 - Stream structured Markdown responses without exposing raw SDK event data
 - Display an animated **Thinking** state, response progress, completion time, and recoverable errors
 - Switch between Plan and Act modes for each conversation
-- Stop an active response and copy individual messages or code blocks
+- Stop an active response, copy or share individual answers, and copy code blocks
 
 ### Context and attachments
 
@@ -51,9 +52,10 @@ The installer includes the local Cline service; users do not need to install Nod
 - Pin important conversations above the rest of the history
 - Rename, share, or delete a conversation from its context menu
 - Render user and Cline messages as separate, copyable cards
-- Upload a local profile picture with consistent rounded styling
+- Upload a profile picture or use an HTTPS image URL, then position and zoom it in a circular crop tool
+- Preserve transparent profile images and use a white initials avatar by default
 - Use an intentionally dark-only interface with native Windows window controls
-- Choose Coral, Violet, Azure, Mint, or Amber accents—or select any custom color
+- Use Pacific (`#1CA9C9`) by default; choose Coral, Violet, Azure, Mint, or Amber, or enter any valid six-digit color
 - Configure Enter-to-send, timestamps, and automatic update checks
 
 ### Account, usage, and updates
@@ -68,7 +70,7 @@ The installer includes the local Cline service; users do not need to install Nod
 
 ![Appearance settings with a custom purple accent](docs/screenshots/cline-chat-appearance-settings.png)
 
-*Appearance settings offer five presets, a custom six-digit color picker, and a live preview. The selected accent is saved locally and applied to selections, progress indicators, focus states, and primary actions.*
+*Appearance settings offer Pacific plus five alternate presets, a validated custom six-digit color field, and a live preview. The selected accent is saved locally and applied to selections, progress indicators, focus states, and primary actions.*
 
 ## Updates
 
@@ -102,7 +104,7 @@ See [Architecture and integration notes](docs/ARCHITECTURE.md) for implementatio
 ## Local data and Cline services
 
 - Cline credentials, provider settings, and sessions use storage managed by the Cline SDK.
-- Appearance preferences, chat preferences, favorite models, pinned conversations, and an optional profile picture are stored in the local WebView profile.
+- Appearance preferences, chat preferences, favorite models, pinned conversations, and optional profile-picture crop settings are stored in the local WebView profile.
 - Profile-picture changes in Cline Chat do not modify the user's Cline account.
 - Attachments are read from the user's chosen local paths and are not copied into this repository.
 - When a user signs in to or uses Cline's hosted services, that service remains governed by [Cline's Terms of Service](https://cline.bot/tos) and [Privacy Notice](https://cline.bot/privacy).
@@ -111,7 +113,7 @@ See [Architecture and integration notes](docs/ARCHITECTURE.md) for implementatio
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl+K` | Focus conversation search |
+| `Ctrl+S` | Focus conversation search |
 | `Ctrl+,` | Open Settings |
 | `Enter` | Send a message when Enter-to-send is enabled |
 | `Shift+Enter` | Insert a new line |

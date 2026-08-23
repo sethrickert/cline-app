@@ -1,9 +1,9 @@
 import type { Account, Conversation, ModelOption } from "../types";
 
 export const MODELS: ModelOption[] = [
-  { id: "anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6", provider: "Cline", contextWindow: 200_000, recommended: true },
+  { id: "anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6", provider: "Cline", contextWindow: 200_000, recommended: true, supportsVision: true },
   { id: "openai/gpt-5.5", label: "GPT-5.5", provider: "Cline", contextWindow: 400_000 },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", provider: "Cline", contextWindow: 1_000_000 },
+  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", provider: "Cline", contextWindow: 1_000_000, free: true, tier: "free", supportsVision: true },
   { id: "anthropic/claude-opus-4.7", label: "Claude Opus 4.7", provider: "Cline", contextWindow: 200_000 },
 ];
 
@@ -81,10 +81,10 @@ export const DEMO_CONVERSATIONS: Conversation[] = [
 
 export const DEMO_ACCOUNT: Account = {
   signedIn: true,
-  name: "Seth",
+  name: "Seth Rickert",
   email: "seth@cline.chat",
-  avatar: "S",
-  plan: "Cline account",
+  avatar: "SR",
+  plan: "Cline Subscription",
   credits: 18.42,
 };
 
