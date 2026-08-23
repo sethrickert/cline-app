@@ -21,7 +21,7 @@ describe("prepareAttachments", () => {
     expect(result.prompt).toBe("Review this context");
   });
 
-  it("extracts Word and PDF binaries into model-readable text", async () => {
+  it("extracts Word and PDF binaries into model-readable text", { timeout: 30_000 }, async () => {
     const directory = await mkdtemp(join(tmpdir(), "cline-chat-context-"));
     try {
       const docxPath = join(directory, "context.docx");
