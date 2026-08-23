@@ -46,6 +46,18 @@ jobs:
           args: --config src-tauri/tauri.release.conf.json
           tagName: v__VERSION__
           releaseName: Cline Chat v__VERSION__
-          releaseBody: See the assets below to install or update Cline Chat for Windows.
+          releaseBody: |
+            Cline Chat 1.2.1 publishes the final Windows interface and attachment fixes that were merged after the original 1.2.0 release.
+
+            Highlights:
+            - Additive Favorites, Recommended, All Models, and Free Models sections
+            - Consistent FREE badges and account-aware model details
+            - Reliable PDF text extraction and vision-model image handling
+            - Circular profile pictures with local upload, HTTPS URL, and crop controls
+            - Ctrl+S search, visible pin controls, and per-answer sharing
+            - Pacific default branding and a dedicated gear-overlay EXE installer icon
+            - Validated custom accent editing without repeated errors
+
+            Download the EXE for the normal Windows installer or the MSI for managed deployment. Existing installations can update from Settings after this release is published.
           releaseDraft: false
           prerelease: false

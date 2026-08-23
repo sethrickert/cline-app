@@ -13,6 +13,7 @@ import { desktopClient } from "./lib/desktop-client";
 import { loadPreferences, savePreferences } from "./lib/preferences";
 import { applyTheme, loadTheme, saveTheme, type ThemePreference } from "./lib/theme";
 import { checkForAppUpdate, getAppVersion, installAppUpdate } from "./lib/updater";
+import { APP_VERSION } from "./lib/version";
 import type { Account, AgentMode, AppPreferences, Attachment, AvatarCrop, Conversation, DesktopEvent, Message, ModelOption, SettingsSection, UpdateState } from "./types";
 
 const EMPTY_USAGE = { contextPercent: 0, usedTokens: 0, maxTokens: 200_000, inputTokens: 0, outputTokens: 0, totalCost: 0 };
@@ -58,7 +59,7 @@ export default function App() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [actionConversationId, setActionConversationId] = useState<string>();
   const [toast, setToast] = useState<string>();
-  const [updateState, setUpdateState] = useState<UpdateState>({ currentVersion: "1.2.0", checking: false, installing: false, available: false });
+  const [updateState, setUpdateState] = useState<UpdateState>({ currentVersion: APP_VERSION, checking: false, installing: false, available: false });
   const streamTimer = useRef<number | undefined>(undefined);
 
   const active = useMemo(() => conversations.find((item) => item.id === activeId) ?? conversations[0], [activeId, conversations]);

@@ -179,7 +179,7 @@ Maintainers must keep the updater private key secure and bump the version in `pa
 
 ## Project status
 
-Version **1.2.0** is the first public Windows release. Automated tests, Windows packaging, signed in-app updates, and public release artifacts are active. The main remaining distribution improvement is Windows Authenticode signing to provide verified publisher identity and reduce SmartScreen friction.
+Version **1.2.1** is the current public Windows release. It adds the final model-selector, attachment, account, personalization, Pacific-branding, and installer-icon refinements. Automated tests, Windows packaging, signed in-app updates, and public release artifacts are active. The main remaining distribution improvement is Windows Authenticode signing to provide verified publisher identity and reduce SmartScreen friction.
 
 ## License, attribution, and trademarks
 

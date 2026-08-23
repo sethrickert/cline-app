@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { AccentId, Account, AppPreferences, SettingsSection, UpdateState } from "../types";
 import { ACCENTS, normalizeHexColor, type ThemePreference } from "../lib/theme";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { APP_VERSION } from "../lib/version";
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
   return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={`toggle ${checked ? "on" : ""}`} onClick={() => onChange(!checked)}><i /></button>;
@@ -64,7 +65,7 @@ export function SettingsDialog({
       <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <aside className="settings-nav">
           <div><h2 id="settings-title">Settings</h2>{nav.map(({ id, label, icon: Icon }) => <button key={id} className={`settings-nav-item ${section === id ? "active" : ""}`} onClick={() => onSectionChange(id)}><Icon size={17} />{label}</button>)}</div>
-          <small>Cline Chat 1.2.0</small>
+          <small>Cline Chat {APP_VERSION}</small>
         </aside>
         <div className="settings-content">
           <button className="dialog-close" aria-label="Close settings" onClick={onClose}><X size={18} /></button>
@@ -102,7 +103,7 @@ export function SettingsDialog({
             <p className="settings-note">Updates are downloaded only from this project’s public GitHub Releases and verified with the app’s signing key before installation.</p>
           </div> : null}
           {section === "about" ? <div className="settings-stack about-stack">
-            <div className="about-mark"><Sparkles size={24} /><span><strong>Cline Chat</strong><small>Version 1.2.0 · Windows only · Dark by design</small></span></div>
+            <div className="about-mark"><Sparkles size={24} /><span><strong>Cline Chat</strong><small>Version {APP_VERSION} · Windows only · Dark by design</small></span></div>
             <p>Cline Chat is free and open-source software created by Seth Rickert with development assistance from OpenAI Codex.</p>
             <button className="external-row" onClick={() => onOpenExternal("https://github.com/sethrickert/cline-app")}><Github size={18} /><span><strong>Source code and releases</strong><small>github.com/sethrickert/cline-app</small></span><ExternalLink size={15} /></button>
             <button className="external-row" onClick={() => onOpenExternal("https://cline.bot")}><Sparkles size={18} /><span><strong>Visit Cline</strong><small>The official Cline project and service</small></span><ExternalLink size={15} /></button>
