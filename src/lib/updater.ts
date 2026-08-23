@@ -1,3 +1,5 @@
+import { APP_VERSION } from "./version";
+
 export type AppUpdate = {
   available: boolean;
   currentVersion: string;
@@ -9,7 +11,7 @@ export type AppUpdate = {
 let pendingUpdate: Awaited<ReturnType<typeof import("@tauri-apps/plugin-updater")["check"]>> | null = null;
 
 export async function getAppVersion() {
-  if (!("__TAURI_INTERNALS__" in window)) return "1.2.0";
+  if (!("__TAURI_INTERNALS__" in window)) return APP_VERSION;
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
