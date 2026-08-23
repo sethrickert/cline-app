@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AccountDialog } from "./components/AccountDialog";
+import { AvatarCropDialog } from "./components/AvatarCropDialog";
 import { AppContextMenu } from "./components/AppContextMenu";
 import { ChatHeader } from "./components/ChatHeader";
 import { ChatMessages } from "./components/ChatMessages";
@@ -13,7 +13,7 @@ import { desktopClient } from "./lib/desktop-client";
 import { loadPreferences, savePreferences } from "./lib/preferences";
 import { applyTheme, loadTheme, saveTheme, type ThemePreference } from "./lib/theme";
 import { checkForAppUpdate, getAppVersion, installAppUpdate } from "./lib/updater";
-import type { Account, AgentMode, AppPreferences, Attachment, Conversation, DesktopEvent, Message, ModelOption, SettingsSection, UpdateState } from "./types";
+import type { Account, AgentMode, AppPreferences, Attachment, AvatarCrop, Conversation, DesktopEvent, Message, ModelOption, SettingsSection, UpdateState } from "./types";
 
 const EMPTY_USAGE = { contextPercent: 0, usedTokens: 0, maxTokens: 200_000, inputTokens: 0, outputTokens: 0, totalCost: 0 };
 const SIGNED_OUT_ACCOUNT: Account = { signedIn: false, name: "", email: "", avatar: "?" };
@@ -47,7 +47,8 @@ export default function App() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("appearance");
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [pendingProfilePhoto, setPendingProfilePhoto] = useState<string>();
+  const [pendingProfileCrop, setPendingProfileCrop] = useState<AvatarCrop>();
   const [account, setAccount] = useState<Account>(() => DESKTOP_MODE ? SIGNED_OUT_ACCOUNT : DEMO_ACCOUNT);
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState<string>();
@@ -62,7 +63,9 @@ export default function App() {
 
   const active = useMemo(() => conversations.find((item) => item.id === activeId) ?? conversations[0], [activeId, conversations]);
   const actionConversation = useMemo(() => conversations.find((item) => item.id === actionConversationId) ?? active, [actionConversationId, active, conversations]);
-  const displayAccount = useMemo(() => ({ ...account, photoUrl: preferences.profilePhoto || account.photoUrl }), [account, preferences.profilePhoto]);
+  const displayAccount = useMemo(() => ({ ...account, photoUrl: preferences.profilePhoto || account.photoUrl, photoCrop: preferences.profilePhoto ? preferences.profilePhotoCrop : undefined }), [account, preferences.profilePhoto, preferences.profilePhotoCrop]);
+
+  const openAccountSettings = useCallback(() => { setSettingsSection("account"); setSettingsOpen(true); }, []);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -81,7 +84,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key === ",") { event.preventDefault(); setSettingsSection("appearance"); setSettingsOpen(true); }
-      if (event.key === "Escape") { setSettingsOpen(false); setAccountOpen(false); setRenameOpen(false); setDeleteOpen(false); }
+      if (event.key === "Escape") { setSettingsOpen(false); setPendingProfilePhoto(undefined); setRenameOpen(false); setDeleteOpen(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -222,8 +225,13 @@ export default function App() {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!active) return;
-    if (!account.signedIn) { setAccountOpen(true); return; }
+    if (!account.signedIn) { openAccountSettings(); return; }
     if (!modelId) { setSettingsSection("account"); setSettingsOpen(true); return; }
+    const selectedModel = models.find((model) => model.id === modelId);
+    if (attachments.some((attachment) => attachment.kind === "image") && !selectedModel?.supportsVision) {
+      showToast("This model cannot view images. Choose a model marked Vision and try again.");
+      return;
+    }
     const currentId = active.id;
     const sessionId = active.sessionId ?? crypto.randomUUID();
     const userMessage: Message = { id: crypto.randomUUID(), role: "user", content: text, createdAt: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), attachments };
@@ -235,7 +243,7 @@ export default function App() {
       if (!(await desktopClient.connect())) throw new Error("The Cline background service is unavailable. Restart Cline Chat and try again.");
       await desktopClient.invoke(active.sessionId ? "chat.send" : "chat.start", { sessionId, prompt: text, modelId, mode, attachments });
     } catch (error) { markChatError(currentId, error); }
-  }, [account.signedIn, active, attachments, markChatError, mode, modelId, models, streamDemo]);
+  }, [account.signedIn, active, attachments, markChatError, mode, modelId, models, openAccountSettings, showToast, streamDemo]);
 
   const changeModel = useCallback((nextModelId: string) => {
     setModelId(nextModelId);
@@ -284,13 +292,34 @@ export default function App() {
         if (!path || Array.isArray(path)) return;
         const { invoke } = await import("@tauri-apps/api/core");
         const profilePhoto = await invoke<string>("read_profile_image", { path });
-        setPreferences((current) => ({ ...current, profilePhoto })); return;
+        setPendingProfilePhoto(profilePhoto); setPendingProfileCrop(undefined); return;
       }
       const input = document.createElement("input"); input.type = "file"; input.accept = "image/*";
-      input.onchange = () => { const file = input.files?.[0]; if (!file || file.size > 2_000_000) return; const reader = new FileReader(); reader.onload = () => setPreferences((current) => ({ ...current, profilePhoto: String(reader.result) })); reader.readAsDataURL(file); };
+      input.onchange = () => { const file = input.files?.[0]; if (!file || file.size > 2_000_000) return; const reader = new FileReader(); reader.onload = () => { setPendingProfilePhoto(String(reader.result)); setPendingProfileCrop(undefined); }; reader.readAsDataURL(file); };
       input.click();
     } catch (error) { showToast(friendlyError(error)); }
   }, [showToast]);
+
+  const setProfilePhotoUrl = useCallback((url: string) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "https:") throw new Error("Profile image URLs must use HTTPS.");
+      setPendingProfilePhoto(parsed.toString());
+      setPendingProfileCrop(undefined);
+    } catch (error) { showToast(friendlyError(error)); }
+  }, [showToast]);
+
+  const editProfilePhoto = useCallback(() => {
+    if (!displayAccount.photoUrl) return;
+    setPendingProfilePhoto(displayAccount.photoUrl);
+    setPendingProfileCrop(displayAccount.photoCrop);
+  }, [displayAccount.photoCrop, displayAccount.photoUrl]);
+
+  const saveProfileCrop = useCallback((profilePhotoCrop: AvatarCrop) => {
+    if (!pendingProfilePhoto) return;
+    setPreferences((current) => ({ ...current, profilePhoto: pendingProfilePhoto, profilePhotoCrop }));
+    setPendingProfilePhoto(undefined);
+  }, [pendingProfilePhoto]);
 
   const openExternal = useCallback(async (url: string) => {
     try { if (DESKTOP_MODE) await desktopClient.invoke("app.openExternal", { url }); else window.open(url, "_blank", "noopener,noreferrer"); }
@@ -305,6 +334,12 @@ export default function App() {
     try { await navigator.share({ title: conversation.title, text }); }
     catch (error) { if ((error as DOMException)?.name !== "AbortError") showToast("Windows could not open the share panel."); }
   }, [active?.id, conversations, showToast]);
+
+  const shareMessage = useCallback(async (message: Message) => {
+    if (!navigator.share) { showToast("Windows sharing is unavailable on this device."); return; }
+    try { await navigator.share({ title: "Cline response", text: message.content }); }
+    catch (error) { if ((error as DOMException)?.name !== "AbortError") showToast("Windows could not open the share panel."); }
+  }, [showToast]);
 
   const saveRename = useCallback((title: string) => {
     if (!actionConversation) return;
@@ -328,15 +363,15 @@ export default function App() {
   return <div className="app-frame">
     <WindowBar />
     <div className="app-workspace">
-      <Sidebar conversations={conversations} activeId={active.id} search={search} account={displayAccount} pinnedConversationIds={preferences.pinnedConversationIds} onSearch={setSearch} onSelect={selectConversation} onNew={newConversation} onPin={togglePinnedConversation} onRename={(id) => { setActionConversationId(id); setRenameOpen(true); }} onDelete={(id) => { setActionConversationId(id); setDeleteOpen(true); }} onShare={(id) => void shareConversation(id)} onSettings={() => { setSettingsSection("appearance"); setSettingsOpen(true); }} onAccount={() => setAccountOpen(true)} />
+      <Sidebar conversations={conversations} activeId={active.id} search={search} account={displayAccount} pinnedConversationIds={preferences.pinnedConversationIds} onSearch={setSearch} onSelect={selectConversation} onNew={newConversation} onPin={togglePinnedConversation} onRename={(id) => { setActionConversationId(id); setRenameOpen(true); }} onDelete={(id) => { setActionConversationId(id); setDeleteOpen(true); }} onShare={(id) => void shareConversation(id)} onSettings={() => { setSettingsSection("appearance"); setSettingsOpen(true); }} onAccount={openAccountSettings} />
       <section className="chat-panel">
-        <ChatHeader title={active.title} models={models} modelId={modelId} usage={active.usage} signedIn={account.signedIn} favoriteModelIds={preferences.favoriteModelIds} onToggleFavorite={toggleFavoriteModel} onModelChange={changeModel} onSignIn={() => setAccountOpen(true)} onShare={() => void shareConversation()} onRename={() => { setActionConversationId(active.id); setRenameOpen(true); }} onDelete={() => { setActionConversationId(active.id); setDeleteOpen(true); }} onManageModels={() => { setSettingsSection("account"); setSettingsOpen(true); }} />
-        {active.messages.length ? <ChatMessages messages={active.messages} account={displayAccount} showTimestamps={preferences.showTimestamps} /> : <div className="empty-chat"><span>{account.signedIn ? "Start a new conversation" : "Connect Cline to begin"}</span><p>{account.signedIn ? "Ask a question, attach context, or describe a task for Cline." : "Your account models and usage will appear after sign-in."}</p>{!account.signedIn ? <button className="primary-inline" onClick={() => setAccountOpen(true)}>Sign in to Cline</button> : null}</div>}
-        <Composer mode={mode} usage={active.usage} streaming={streaming} signedIn={account.signedIn} hasModel={Boolean(modelId)} sendWithEnter={preferences.sendWithEnter} attachments={attachments} onModeChange={setMode} onSend={sendMessage} onStop={stop} onSignIn={() => setAccountOpen(true)} onAddAttachments={addAttachments} onRemoveAttachment={(id) => setAttachments((items) => items.filter((item) => item.id !== id))} />
+        <ChatHeader title={active.title} models={models} modelId={modelId} usage={active.usage} signedIn={account.signedIn} accountPlan={account.plan} favoriteModelIds={preferences.favoriteModelIds} onToggleFavorite={toggleFavoriteModel} onModelChange={changeModel} onSignIn={openAccountSettings} onShare={() => void shareConversation()} onRename={() => { setActionConversationId(active.id); setRenameOpen(true); }} onDelete={() => { setActionConversationId(active.id); setDeleteOpen(true); }} onManageModels={openAccountSettings} />
+        {active.messages.length ? <ChatMessages messages={active.messages} account={displayAccount} showTimestamps={preferences.showTimestamps} onShare={shareMessage} /> : <div className="empty-chat"><span>{account.signedIn ? "Start a new conversation" : "Connect Cline to begin"}</span><p>{account.signedIn ? "Ask a question, attach context, or describe a task for Cline." : "Your account models and usage will appear after sign-in."}</p>{!account.signedIn ? <button className="primary-inline" onClick={openAccountSettings}>Sign in to Cline</button> : null}</div>}
+        <Composer mode={mode} usage={active.usage} streaming={streaming} signedIn={account.signedIn} hasModel={Boolean(modelId)} sendWithEnter={preferences.sendWithEnter} attachments={attachments} onModeChange={setMode} onSend={sendMessage} onStop={stop} onSignIn={openAccountSettings} onAddAttachments={addAttachments} onRemoveAttachment={(id) => setAttachments((items) => items.filter((item) => item.id !== id))} />
       </section>
     </div>
-    <SettingsDialog open={settingsOpen} section={settingsSection} theme={theme} account={displayAccount} preferences={preferences} updateState={updateState} onSectionChange={setSettingsSection} onThemeChange={setTheme} onPreferencesChange={setPreferences} onAccount={() => { setSettingsOpen(false); setAccountOpen(true); }} onChangePhoto={changeProfilePhoto} onRemovePhoto={() => setPreferences((current) => ({ ...current, profilePhoto: undefined }))} onCheckUpdates={() => void checkUpdates()} onInstallUpdate={() => void installUpdate()} onOpenExternal={(url) => void openExternal(url)} onClose={() => setSettingsOpen(false)} />
-    <AccountDialog open={accountOpen} account={displayAccount} busy={authBusy} error={authError} deviceCode={deviceCode} onSignIn={signIn} onSignOut={signOut} onChangePhoto={changeProfilePhoto} onClose={() => setAccountOpen(false)} />
+    <SettingsDialog open={settingsOpen} section={settingsSection} theme={theme} account={displayAccount} preferences={preferences} updateState={updateState} authBusy={authBusy} authError={authError} deviceCode={deviceCode} onSectionChange={setSettingsSection} onThemeChange={setTheme} onPreferencesChange={setPreferences} onSignIn={signIn} onSignOut={signOut} onChangePhoto={changeProfilePhoto} onEditPhoto={editProfilePhoto} onSetPhotoUrl={setProfilePhotoUrl} onRemovePhoto={() => setPreferences((current) => ({ ...current, profilePhoto: undefined, profilePhotoCrop: undefined }))} onCheckUpdates={() => void checkUpdates()} onInstallUpdate={() => void installUpdate()} onOpenExternal={(url) => void openExternal(url)} onClose={() => setSettingsOpen(false)} />
+    <AvatarCropDialog source={pendingProfilePhoto} initialCrop={pendingProfileCrop} onSave={saveProfileCrop} onClose={() => setPendingProfilePhoto(undefined)} />
     <RenameDialog open={renameOpen} initialValue={actionConversation?.title ?? active.title} onSave={saveRename} onClose={() => { setRenameOpen(false); setActionConversationId(undefined); }} />
     <DeleteDialog open={deleteOpen} title={actionConversation?.title ?? active.title} onConfirm={deleteActive} onClose={() => { setDeleteOpen(false); setActionConversationId(undefined); }} />
     <AppContextMenu onShare={() => void shareConversation()} />

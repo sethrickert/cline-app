@@ -1,4 +1,4 @@
-import { Check, Copy, File, Folder, Image as ImageIcon } from "lucide-react";
+import { Check, Copy, File, Folder, Image as ImageIcon, Share2 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -40,7 +40,7 @@ function formatDuration(value?: number) {
   return `${Math.floor(value / 60_000)}m ${Math.round((value % 60_000) / 1_000)}s`;
 }
 
-const MessageView = memo(function MessageView({ message, account, showTimestamp }: { message: Message; account: Account; showTimestamp: boolean }) {
+const MessageView = memo(function MessageView({ message, account, showTimestamp, onShare }: { message: Message; account: Account; showTimestamp: boolean; onShare: (message: Message) => void }) {
   const [copied, setCopied] = useState(false);
   if (message.role === "system") return <div className="system-message">{message.content}</div>;
   const assistant = message.role === "assistant";
@@ -53,7 +53,7 @@ const MessageView = memo(function MessageView({ message, account, showTimestamp 
   return (
     <article className={`message ${assistant ? "assistant" : "user"}`}>
       <div className={`message-avatar ${assistant ? "assistant-avatar" : "user-avatar"}`}>
-        {assistant ? <BrandMark size={27} /> : <ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar || "Y"} />}
+        {assistant ? <BrandMark size={27} /> : <ProfileAvatar photoUrl={account.photoUrl} fallback={account.avatar || "Y"} crop={account.photoCrop} />}
       </div>
       <div className="message-content">
         <div className="message-meta"><strong>{assistant ? "Cline" : "You"}</strong>{showTimestamp ? <time>{message.createdAt}</time> : null}</div>
@@ -62,13 +62,13 @@ const MessageView = memo(function MessageView({ message, account, showTimestamp 
           {message.attachments?.length ? <div className="attachment-list">{message.attachments.map((attachment) => <AttachmentCard key={attachment.id} attachment={attachment} />)}</div> : null}
         </div>
         {message.streaming ? <div className="thinking-state"><strong>Thinking</strong><img src={thinkingAnimation} alt="" /></div> : null}
-        {!message.streaming && message.content ? <div className="message-actions"><button onClick={copyMessage}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy"}</button>{duration ? <span>Completed in {duration}</span> : null}</div> : null}
+        {!message.streaming && message.content ? <div className="message-actions"><button onClick={copyMessage}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy"}</button>{assistant ? <button onClick={() => onShare(message)}><Share2 size={14} />Share</button> : null}{duration ? <span>Completed in {duration}</span> : null}</div> : null}
       </div>
     </article>
   );
 });
 
-export function ChatMessages({ messages, account, showTimestamps }: { messages: Message[]; account: Account; showTimestamps: boolean }) {
+export function ChatMessages({ messages, account, showTimestamps, onShare }: { messages: Message[]; account: Account; showTimestamps: boolean; onShare: (message: Message) => void }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
@@ -76,7 +76,7 @@ export function ChatMessages({ messages, account, showTimestamps }: { messages: 
   return (
     <main className="chat-scroll" aria-live="polite">
       <div className="message-column">
-        {messages.map((message) => <MessageView key={message.id} message={message} account={account} showTimestamp={showTimestamps} />)}
+        {messages.map((message) => <MessageView key={message.id} message={message} account={account} showTimestamp={showTimestamps} onShare={onShare} />)}
         <div ref={endRef} />
       </div>
     </main>

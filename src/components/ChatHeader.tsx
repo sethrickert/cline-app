@@ -16,6 +16,7 @@ export function ChatHeader({
   onDelete,
   onManageModels,
   favoriteModelIds,
+  accountPlan,
   onToggleFavorite,
 }: {
   title: string;
@@ -30,6 +31,7 @@ export function ChatHeader({
   onDelete: () => void;
   onManageModels: () => void;
   favoriteModelIds: string[];
+  accountPlan?: string;
   onToggleFavorite: (modelId: string) => void;
 }) {
   const [modelOpen, setModelOpen] = useState(false);
@@ -38,12 +40,15 @@ export function ChatHeader({
   const wrapRef = useRef<HTMLDivElement>(null);
   const selected = models.find((model) => model.id === modelId) ?? models[0];
   const favoriteModels = useMemo(() => models.filter((model) => favoriteModelIds.includes(model.id)), [favoriteModelIds, models]);
-  const otherModels = useMemo(() => models.filter((model) => !favoriteModelIds.includes(model.id)), [favoriteModelIds, models]);
+  const recommendedModels = useMemo(() => models.filter((model) => model.recommended || model.tier === "recommended"), [models]);
+  const freeModels = useMemo(() => models.filter((model) => model.free || model.tier === "free" || /\(free\)/i.test(model.label)), [models]);
+
+  const accessLabel = accountPlan && accountPlan.toLowerCase() !== "cline account" ? accountPlan : "Cline account";
 
   const modelRow = (model: ModelOption) => (
     <div className="model-row" key={model.id}>
       <button className="model-choice" onClick={() => { onModelChange(model.id); setModelOpen(false); }}>
-        <span><strong>{model.label}{model.tier ? <em className={`model-tier ${model.tier}`}>{model.tier}</em> : null}</strong><small>{model.provider} · {(model.contextWindow / 1000).toFixed(0)}K context{model.supportsVision ? " · Vision" : ""}</small></span>
+        <span><strong>{model.label.replace(/\s*\(free\)\s*/gi, "").trim()}{model.free || model.tier === "free" || /\(free\)/i.test(model.label) ? <em className="model-tier free">FREE</em> : null}{model.recommended || model.tier === "recommended" ? <em className="model-tier recommended">Recommended</em> : null}</strong><small>{accessLabel} · {Math.round(model.contextWindow / 1000)}K context{model.supportsVision ? " · Vision" : ""}</small></span>
         {model.id === modelId ? <Check size={16} className="accent-icon" /> : null}
       </button>
       <button className={`favorite-button ${favoriteModelIds.includes(model.id) ? "active" : ""}`} aria-label={`${favoriteModelIds.includes(model.id) ? "Remove" : "Add"} ${model.label} ${favoriteModelIds.includes(model.id) ? "from" : "to"} favorites`} onClick={() => onToggleFavorite(model.id)}><Star size={15} fill={favoriteModelIds.includes(model.id) ? "currentColor" : "none"} /></button>
@@ -72,10 +77,13 @@ export function ChatHeader({
           </button>
           {modelOpen ? (
             <div className="popover model-menu">
-              <div className="popover-heading"><strong>Models for your account</strong><small>Loaded from Cline after sign-in</small></div>
+              <div className="popover-heading"><strong>Cline Models</strong><small>Loaded from your account</small></div>
               <div className="model-menu-scroll">
-                {favoriteModels.length ? <><div className="model-section-label"><Star size={12} />Favorites</div>{favoriteModels.map(modelRow)}<div className="model-section-label">All models</div></> : null}
-                {otherModels.map(modelRow)}
+                {favoriteModels.length ? <><div className="model-section-label"><Star size={12} />Favorites</div>{favoriteModels.map((model) => <div key={`favorite-${model.id}`}>{modelRow(model)}</div>)}</> : null}
+                {recommendedModels.length ? <><div className="model-section-label">Recommended</div>{recommendedModels.map((model) => <div key={`recommended-${model.id}`}>{modelRow(model)}</div>)}</> : null}
+                <div className="model-section-label">All models</div>
+                {models.map((model) => <div key={`all-${model.id}`}>{modelRow(model)}</div>)}
+                {freeModels.length ? <><div className="model-section-label">Free Models</div>{freeModels.map((model) => <div key={`free-${model.id}`}>{modelRow(model)}</div>)}</> : null}
               </div>
               {models.length ? null : <p className="model-menu-empty">No models were returned for this account.</p>}
               <button className="manage-models" onClick={() => { setModelOpen(false); onManageModels(); }}>Account and model details</button>
